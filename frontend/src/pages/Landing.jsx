@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Nav from "../components/Nav";
 import { api, mediaUrl } from "../api";
+import { BRAND } from "../brand";
 
 const FALLBACK_CATS = [
   { name: "Comedy", slug: "comedy", emoji: "🎤", color: "#ff2e97" },
@@ -99,8 +100,8 @@ export default function Landing() {
       </section>
 
       <footer className="footer shell">
-        <div className="brand"><span className="dot" /> ClashTok</div>
-        <p>The community-powered TikTok debate arena · Working title, fully customizable</p>
+        <div className="brand"><span className="dot" /> {BRAND.name}</div>
+        <p>The community-powered TikTok debate arena</p>
       </footer>
     </>
   );

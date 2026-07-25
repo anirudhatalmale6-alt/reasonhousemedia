@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth";
+import { BRAND } from "../brand";
 
 export default function Nav() {
   const { user, logout } = useAuth();
@@ -7,7 +8,7 @@ export default function Nav() {
 
   return (
     <nav className="nav shell">
-      <Link to="/" className="brand"><span className="dot" /> ClashTok</Link>
+      <Link to="/" className="brand"><span className="dot" /> {BRAND.name}</Link>
       <div className="nav-links">
         <Link to="/c/comedy">Categories</Link>
         <Link to="/#leaderboard">Leaderboard</Link>
