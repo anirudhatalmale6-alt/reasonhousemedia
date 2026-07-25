@@ -66,6 +66,7 @@ const publicUser = (u) => ({
   display_name: u.display_name,
   tiktok_handle: u.tiktok_handle,
   photo: u.photo,
+  graphic_bar: u.graphic_bar,
   category_id: u.category_id,
 });
 
@@ -128,7 +129,7 @@ app.get("/api/categories/:slug", (req, res) => {
   if (!cat) return res.status(404).json({ error: "Category not found" });
   const users = db
     .prepare(
-      `SELECT u.id, u.display_name, u.tiktok_handle, u.photo, r.position
+      `SELECT u.id, u.display_name, u.tiktok_handle, u.photo, u.graphic_bar, r.position
        FROM rankings r JOIN users u ON u.id = r.user_id
        WHERE r.category_id = ? ORDER BY r.position ASC`
     )
@@ -191,6 +192,59 @@ app.delete("/api/admin/categories/:id", auth(), adminOnly, (req, res) => {
   db.prepare("DELETE FROM categories WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
 });
+
+// ---- List every creator (admin) — for assigning into categories ----
+app.get("/api/admin/users", auth(), adminOnly, (_req, res) => {
+  const users = db
+    .prepare("SELECT id, display_name, tiktok_handle, photo, graphic_bar FROM users WHERE is_admin = 0 ORDER BY display_name COLLATE NOCASE")
+    .all();
+  res.json(users);
+});
+
+// ---- Add an existing creator to a category's board (bottom) ----
+app.post("/api/admin/categories/:id/members", auth(), adminOnly, (req, res) => {
+  const catId = Number(req.params.id);
+  const userId = Number(req.body.user_id);
+  if (!userId) return res.status(400).json({ error: "user_id required" });
+  const exists = db.prepare("SELECT 1 FROM rankings WHERE category_id = ? AND user_id = ?").get(catId, userId);
+  if (exists) return res.status(409).json({ error: "Creator already in this category" });
+  const max = db.prepare("SELECT COALESCE(MAX(position), -1) m FROM rankings WHERE category_id = ?").get(catId).m;
+  db.prepare("INSERT INTO rankings (category_id, user_id, position) VALUES (?,?,?)").run(catId, userId, max + 1);
+  res.json({ ok: true });
+});
+
+// ---- Remove a creator from a category's board ----
+app.delete("/api/admin/categories/:id/members/:userId", auth(), adminOnly, (req, res) => {
+  db.prepare("DELETE FROM rankings WHERE category_id = ? AND user_id = ?").run(req.params.id, req.params.userId);
+  res.json({ ok: true });
+});
+
+// ---- Update a creator: profile pic, custom graphic bar, name/handle (admin) ----
+app.patch(
+  "/api/admin/users/:id",
+  auth(),
+  adminOnly,
+  upload.fields([{ name: "photo", maxCount: 1 }, { name: "graphic_bar", maxCount: 1 }]),
+  (req, res) => {
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id);
+    if (!user) return res.status(404).json({ error: "Creator not found" });
+
+    const fields = [];
+    const vals = [];
+    if (req.body.display_name) { fields.push("display_name = ?"); vals.push(req.body.display_name); }
+    if (req.body.tiktok_handle) {
+      const h = req.body.tiktok_handle.startsWith("@") ? req.body.tiktok_handle : "@" + req.body.tiktok_handle;
+      fields.push("tiktok_handle = ?"); vals.push(h);
+    }
+    if (req.files?.photo?.[0]) { fields.push("photo = ?"); vals.push(`/uploads/${req.files.photo[0].filename}`); }
+    if (req.files?.graphic_bar?.[0]) { fields.push("graphic_bar = ?"); vals.push(`/uploads/${req.files.graphic_bar[0].filename}`); }
+
+    if (fields.length) {
+      db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...vals, req.params.id);
+    }
+    res.json(publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id)));
+  }
+);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 

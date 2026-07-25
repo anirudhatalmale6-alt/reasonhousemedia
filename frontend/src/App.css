@@ -277,15 +277,125 @@
 }
 .admin-list { list-style: none; margin: 0; padding: 0; }
 .admin-row {
-  display: grid; grid-template-columns: 30px 34px 46px 1fr; align-items: center; gap: 14px;
+  display: grid; grid-template-columns: 30px 34px 46px 1fr auto; align-items: center; gap: 14px;
   padding: 12px; border-radius: 14px; margin-bottom: 8px;
   background: rgba(255,255,255,.03); border: 1px solid var(--border);
   cursor: default;
 }
+.admin-row-main { position: relative; min-width: 0; padding: 4px 0; }
+.admin-row-main .graphic-bar {
+  position: absolute; inset: -4px -8px; border-radius: 10px;
+  background-size: cover; background-position: center; opacity: .55; z-index: 0;
+  mask-image: linear-gradient(90deg, black 55%, transparent);
+}
+.admin-row-main .name, .admin-row-main .handle { position: relative; z-index: 1; }
+.admin-row-actions { display: flex; gap: 8px; }
+.mini-btn {
+  padding: 7px 13px; border-radius: 9px; font-size: 13px; font-weight: 600;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--text);
+  transition: all .15s;
+}
+.mini-btn:hover { border-color: var(--neon-cyan); }
+.mini-btn.danger:hover { border-color: var(--neon-pink); color: #ff9ec8; }
 .drag-handle { cursor: grab; color: var(--muted); font-size: 20px; text-align:center; touch-action: none; user-select: none; }
 .drag-handle:active { cursor: grabbing; }
 
 @media (max-width: 860px) {
   .cat-hero { flex-wrap: wrap; }
   .cat-hero .btn { margin-left: 0 !important; width: 100%; }
+}
+
+/* ---------- Admin: category tabs (editable) ---------- */
+.admin-tab-wrap {
+  display: inline-flex; align-items: center; border-radius: 999px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border); overflow: hidden;
+  transition: all .18s;
+}
+.admin-tab-wrap.on { background: var(--grad-hot); border-color: transparent; box-shadow: 0 6px 20px rgba(255,46,151,.3); }
+.admin-tab-wrap.on .admin-tab-btn { color: #fff; }
+.admin-tab-btn { padding: 10px 8px 10px 16px; font-weight: 600; font-size: 14px; color: var(--muted); background: none; border: none; }
+.admin-tab-wrap:not(.on):hover .admin-tab-btn { color: var(--text); }
+.admin-tab-x {
+  padding: 0 12px 0 6px; background: none; border: none; color: inherit; opacity: .6;
+  font-size: 18px; line-height: 1;
+}
+.admin-tab-x:hover { opacity: 1; }
+.admin-tab-add {
+  padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 14px;
+  background: rgba(34,224,255,.08); border: 1px dashed rgba(34,224,255,.4); color: var(--neon-cyan);
+}
+.admin-tab-add:hover { background: rgba(34,224,255,.16); }
+
+/* add-category form */
+.add-cat {
+  overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+  padding: 16px; margin-bottom: 18px;
+}
+.add-cat input {
+  padding: 11px 14px; border-radius: 10px; background: rgba(255,255,255,.04);
+  border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 15px; min-width: 220px;
+}
+.picker { display: flex; gap: 6px; flex-wrap: wrap; }
+.emoji-pick {
+  width: 34px; height: 34px; border-radius: 9px; font-size: 17px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+}
+.emoji-pick.on { border-color: var(--neon-cyan); background: rgba(34,224,255,.14); }
+.color-pick { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; }
+.color-pick.on { border-color: #fff; }
+
+/* assign creator */
+.assign-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.assign-row select {
+  flex: 1; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.04);
+  border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 15px;
+}
+.assign-row select option { background: var(--panel-solid); }
+
+/* ---------- Edit creator modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(4,2,10,.72); backdrop-filter: blur(6px);
+  display: flex; align-items: flex-start; justify-content: center; padding: 6vh 20px; overflow-y: auto;
+}
+.modal {
+  position: relative; overflow: hidden; width: 100%; max-width: 460px;
+  background: var(--panel-solid); border: 1px solid var(--border); border-radius: 22px; padding: 28px;
+  box-shadow: 0 40px 90px rgba(0,0,0,.6);
+}
+.modal .glow { position:absolute; inset:0; background: radial-gradient(90% 50% at 100% 0%, rgba(168,85,247,.2), transparent 55%); pointer-events:none; }
+.modal > * { position: relative; }
+.modal label { display:block; font-size: 13px; color: var(--muted); margin-bottom: 7px; font-weight: 600; }
+.modal input {
+  width: 100%; padding: 12px 14px; border-radius: 11px; background: rgba(255,255,255,.04);
+  border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 15px; outline: none;
+}
+.modal input:focus { border-color: var(--neon-cyan); }
+.edit-photo-row { display: flex; align-items: center; gap: 14px; }
+.edit-photo {
+  width: 70px; height: 70px; border-radius: 16px; background-size: cover; background-position: center;
+  border: 2px dashed rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px; cursor: pointer; flex-shrink: 0;
+}
+.edit-bar {
+  height: 70px; border-radius: 12px; background-size: cover; background-position: center;
+  border: 2px dashed rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 14px; cursor: pointer;
+}
+.edit-bar:hover, .edit-photo:hover { border-color: var(--neon-pink); }
+
+/* graphic bar on public ranking rows */
+.name-wrap { position: relative; min-width: 0; padding: 3px 0; }
+.name-wrap .graphic-bar {
+  position: absolute; inset: -3px -8px; border-radius: 10px;
+  background-size: cover; background-position: center; opacity: .5; z-index: 0;
+  mask-image: linear-gradient(90deg, black 55%, transparent);
+}
+.name-wrap .name, .name-wrap .handle { position: relative; z-index: 1; }
+
+@media (max-width: 600px) {
+  .admin-row { grid-template-columns: 24px 26px 40px 1fr; gap: 10px; }
+  .admin-row-actions { grid-column: 3 / -1; justify-content: flex-start; margin-top: 4px; }
+  .assign-row { flex-direction: column; }
 }

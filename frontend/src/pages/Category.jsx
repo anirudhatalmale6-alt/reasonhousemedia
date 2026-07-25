@@ -49,7 +49,8 @@ export default function Category() {
                   <div className={`rank r${i + 1}`}>{i + 1}</div>
                   <Link to={`/u/${u.id}`} className="avatar"
                     style={{ backgroundImage: `url(${mediaUrl(u.photo) || `https://i.pravatar.cc/120?u=${u.id}`})` }} />
-                  <div>
+                  <div className="name-wrap">
+                    {u.graphic_bar && <div className="graphic-bar" style={{ backgroundImage: `url(${mediaUrl(u.graphic_bar)})` }} />}
                     <Link to={`/u/${u.id}`} className="name" style={{ display: "block" }}>{u.display_name}</Link>
                     <a className="handle" href={`https://www.tiktok.com/${u.tiktok_handle}`} target="_blank" rel="noreferrer">
                       {u.tiktok_handle} ↗

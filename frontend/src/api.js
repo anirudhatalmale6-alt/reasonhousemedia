@@ -37,4 +37,12 @@ export const api = {
     request("/api/admin/categories", { method: "POST", body: payload, auth: true }),
   deleteCategory: (id) =>
     request(`/api/admin/categories/${id}`, { method: "DELETE", auth: true }),
+  // --- admin: members & per-creator media ---
+  allUsers: () => request("/api/admin/users", { auth: true }),
+  addMember: (catId, userId) =>
+    request(`/api/admin/categories/${catId}/members`, { method: "POST", body: { user_id: userId }, auth: true }),
+  removeMember: (catId, userId) =>
+    request(`/api/admin/categories/${catId}/members/${userId}`, { method: "DELETE", auth: true }),
+  updateUser: (id, form) =>
+    request(`/api/admin/users/${id}`, { method: "PATCH", form, auth: true }),
 };

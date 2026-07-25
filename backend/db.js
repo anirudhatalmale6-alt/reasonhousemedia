@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   display_name TEXT NOT NULL,
   tiktok_handle TEXT NOT NULL,
   photo TEXT,
+  graphic_bar TEXT,
   category_id INTEGER,
   is_admin INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
@@ -39,6 +40,10 @@ CREATE TABLE IF NOT EXISTS rankings (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 `);
+
+// ---- Lightweight migrations (for DBs created before a column existed) ----
+const userCols = db.prepare("PRAGMA table_info(users)").all().map((c) => c.name);
+if (!userCols.includes("graphic_bar")) db.exec("ALTER TABLE users ADD COLUMN graphic_bar TEXT");
 
 // ---- Seed default categories + admin on first run ----
 const catCount = db.prepare("SELECT COUNT(*) n FROM categories").get().n;
