@@ -8,7 +8,7 @@ export default function Nav() {
 
   return (
     <nav className="nav shell">
-      <Link to="/" className="brand"><span className="dot" /> {BRAND.name}</Link>
+      <Link to="/" className="brand"><img src="/logo.png" className="brand-logo" alt="" /> {BRAND.name}</Link>
       <div className="nav-links">
         <Link to="/c/comedy">Categories</Link>
         <Link to="/#leaderboard">Leaderboard</Link>

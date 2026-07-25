@@ -100,7 +100,7 @@ export default function Landing() {
       </section>
 
       <footer className="footer shell">
-        <div className="brand"><span className="dot" /> {BRAND.name}</div>
+        <div className="brand"><img src="/logo.png" className="brand-logo" alt="" /> {BRAND.name}</div>
         <p>The community-powered TikTok debate arena</p>
       </footer>
     </>

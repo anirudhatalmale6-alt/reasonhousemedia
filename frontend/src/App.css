@@ -30,6 +30,12 @@
   box-shadow: 0 0 14px var(--neon-pink);
   animation: pulse 2.4s ease-in-out infinite;
 }
+.brand-logo {
+  width: 38px; height: 38px; border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 16px rgba(255, 195, 60, 0.35);
+}
+.footer .brand-logo { width: 46px; height: 46px; }
 @keyframes pulse { 0%,100%{ transform: scale(1); opacity:1;} 50%{ transform: scale(1.35); opacity:.75;} }
 .nav-links { display: flex; gap: 26px; align-items: center; }
 .nav-links a { color: var(--muted); font-size: 15px; font-weight: 500; transition: color .2s; }
