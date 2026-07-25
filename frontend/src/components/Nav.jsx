@@ -12,7 +12,7 @@ export default function Nav() {
       <div className="nav-links">
         <Link to="/c/comedy">Categories</Link>
         <Link to="/events">Events</Link>
-        <Link to="/#leaderboard">Leaderboard</Link>
+        <Link to="/hosters">Hosters</Link>
         {user?.is_admin && <Link to="/admin">Admin</Link>}
       </div>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>

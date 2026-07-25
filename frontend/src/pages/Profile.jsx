@@ -32,6 +32,11 @@ export default function Profile() {
             </a>
             <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 6 }}>Tap the handle to open their TikTok in a new tab</p>
 
+            <div className="role-chips">
+              {u.is_debater && <span className="role-chip debater">🎤 Debater</span>}
+              {u.is_hoster && <span className="role-chip hoster">🎙️ Hoster{u.events_hosted ? ` · ${u.events_hosted} events` : ""}</span>}
+            </div>
+
             {u.record && (u.record.wins > 0 || u.record.losses > 0) && (
               <div className="profile-record">
                 <div className="rec-box"><b className="gold-text" style={{ WebkitTextFillColor: "var(--win)" }}>{u.record.wins}</b><span>Wins</span></div>

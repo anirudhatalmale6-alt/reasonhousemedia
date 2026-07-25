@@ -61,4 +61,9 @@ export const api = {
   addMatchup: (eventId, payload) => request(`/api/admin/events/${eventId}/matchups`, { method: "POST", body: payload, auth: true }),
   updateMatchup: (id, payload) => request(`/api/admin/matchups/${id}`, { method: "PATCH", body: payload, auth: true }),
   deleteMatchup: (id) => request(`/api/admin/matchups/${id}`, { method: "DELETE", auth: true }),
+  // --- hosters ---
+  hosters: () => request("/api/hosters"),
+  reorderHosters: (order) => request("/api/admin/hosters/order", { method: "PUT", body: { order }, auth: true }),
+  addHoster: (userId) => request("/api/admin/hosters", { method: "POST", body: { user_id: userId }, auth: true }),
+  removeHoster: (id) => request(`/api/admin/hosters/${id}`, { method: "DELETE", auth: true }),
 };

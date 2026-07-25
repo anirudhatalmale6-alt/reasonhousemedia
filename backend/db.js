@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS users (
   category_id INTEGER,
   is_admin INTEGER DEFAULT 0,
   role TEXT DEFAULT 'user',
+  is_debater INTEGER DEFAULT 1,
+  is_hoster INTEGER DEFAULT 0,
+  hoster_position INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
@@ -50,6 +53,7 @@ CREATE TABLE IF NOT EXISTS events (
   title TEXT NOT NULL,
   event_date TEXT,
   status TEXT DEFAULT 'upcoming',   -- 'upcoming' | 'completed'
+  host_id INTEGER,                  -- a hoster who runs this event
   position INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -78,6 +82,11 @@ if (!userCols.includes("role")) {
   db.exec("UPDATE users SET role = 'admin' WHERE is_admin = 1");
   db.exec("UPDATE users SET role = 'user' WHERE role IS NULL");
 }
+if (!userCols.includes("is_debater")) db.exec("ALTER TABLE users ADD COLUMN is_debater INTEGER DEFAULT 1");
+if (!userCols.includes("is_hoster")) db.exec("ALTER TABLE users ADD COLUMN is_hoster INTEGER DEFAULT 0");
+if (!userCols.includes("hoster_position")) db.exec("ALTER TABLE users ADD COLUMN hoster_position INTEGER DEFAULT 0");
+const eventCols = db.prepare("PRAGMA table_info(events)").all().map((c) => c.name);
+if (eventCols.length && !eventCols.includes("host_id")) db.exec("ALTER TABLE events ADD COLUMN host_id INTEGER");
 
 // ---- Seed default categories + admin on first run ----
 const catCount = db.prepare("SELECT COUNT(*) n FROM categories").get().n;

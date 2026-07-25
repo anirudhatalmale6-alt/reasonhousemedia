@@ -4,6 +4,7 @@ import { Reorder, useDragControls, AnimatePresence, motion } from "framer-motion
 import Nav from "../components/Nav";
 import TeamManager from "../components/TeamManager";
 import EventsManager from "../components/EventsManager";
+import HostersManager from "../components/HostersManager";
 import { api, mediaUrl } from "../api";
 import { useAuth } from "../auth";
 
@@ -219,6 +220,9 @@ export default function Admin() {
 
         {/* Events management */}
         <EventsManager />
+
+        {/* Top Hosters management */}
+        <HostersManager />
 
         {/* Team management — super admins only */}
         {user?.role === "admin" && <TeamManager />}

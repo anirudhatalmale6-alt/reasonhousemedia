@@ -14,7 +14,7 @@ export default function Signup() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [form, setForm] = useState({
-    display_name: "", tiktok_handle: "", email: "", password: "", category_id: "",
+    display_name: "", tiktok_handle: "", email: "", password: "", category_id: "", join_as: "debater",
   });
 
   useEffect(() => { api.categories().then((c) => { setCats(c); setForm((f) => ({ ...f, category_id: c[0]?.id || "" })); }); }, []);
@@ -58,16 +58,35 @@ export default function Signup() {
           </div>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
 
+          <label>Join as</label>
+          <div className="join-as">
+            {[
+              { v: "debater", label: "🎤 Debater", sub: "Get ranked" },
+              { v: "hoster", label: "🎙️ Hoster", sub: "Run events" },
+              { v: "both", label: "⚡ Both", sub: "Do it all" },
+            ].map((o) => (
+              <button type="button" key={o.v}
+                className={`join-opt ${form.join_as === o.v ? "on" : ""}`}
+                onClick={() => setForm({ ...form, join_as: o.v })}>
+                <b>{o.label}</b><span>{o.sub}</span>
+              </button>
+            ))}
+          </div>
+
           <label>Display name</label>
           <input value={form.display_name} onChange={set("display_name")} placeholder="Aria Vibe" required />
 
           <label>TikTok handle</label>
           <input value={form.tiktok_handle} onChange={set("tiktok_handle")} placeholder="@ariavibe" required />
 
-          <label>Category</label>
-          <select value={form.category_id} onChange={set("category_id")}>
-            {cats.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
-          </select>
+          {form.join_as !== "hoster" && (
+            <>
+              <label>Debate category</label>
+              <select value={form.category_id} onChange={set("category_id")}>
+                {cats.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+              </select>
+            </>
+          )}
 
           <label>Email</label>
           <input type="email" value={form.email} onChange={set("email")} placeholder="you@email.com" required />

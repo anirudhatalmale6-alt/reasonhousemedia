@@ -541,3 +541,23 @@
 }
 .am-add-matchup select option { background: var(--panel-solid); }
 .am-add-matchup input { min-width: 130px; }
+
+/* ---------- Signup: join-as selector ---------- */
+.join-as { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 4px; }
+.join-opt {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 12px 6px; border-radius: 14px; text-align: center;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text);
+  transition: all .16s;
+}
+.join-opt b { font-size: 14px; }
+.join-opt span { font-size: 11px; color: var(--muted); }
+.join-opt:hover { border-color: rgba(245,197,66,.4); }
+.join-opt.on { border-color: var(--gold); background: rgba(245,197,66,.12); box-shadow: 0 0 16px rgba(245,197,66,.2); }
+.join-opt.on span { color: var(--gold); }
+
+/* ---------- Profile role chips ---------- */
+.role-chips { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.role-chip { font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; }
+.role-chip.debater { background: rgba(255,46,151,.14); color: #ff9ec8; border: 1px solid rgba(255,46,151,.35); }
+.role-chip.hoster { background: rgba(245,197,66,.14); color: var(--gold); border: 1px solid rgba(245,197,66,.4); }

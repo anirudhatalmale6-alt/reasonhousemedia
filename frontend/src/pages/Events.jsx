@@ -48,7 +48,10 @@ function EventBlock({ ev }) {
         <h2>{ev.title}</h2>
         <span className={`event-status ${ev.status}`}>{ev.status === "completed" ? "Past" : "Upcoming"}</span>
       </div>
-      {ev.event_date && <div className="event-date">{ev.event_date}</div>}
+      <div className="event-date">
+        {ev.event_date}
+        {ev.host && <> · Hosted by <Link to={`/u/${ev.host.id}`} className="gold-text" style={{ fontWeight: 700 }}>🎙️ {ev.host.display_name}</Link></>}
+      </div>
       <div style={{ marginTop: 14 }}>
         {ev.matchups.length === 0
           ? <p style={{ color: "var(--muted)" }}>Matchups to be announced.</p>

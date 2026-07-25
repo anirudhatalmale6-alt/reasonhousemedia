@@ -73,7 +73,12 @@ const publicUser = (u) => ({
   photo: u.photo,
   graphic_bar: u.graphic_bar,
   category_id: u.category_id,
+  is_debater: !!u.is_debater,
+  is_hoster: !!u.is_hoster,
 });
+
+const eventsHostedCount = (userId) =>
+  db.prepare("SELECT COUNT(*) n FROM events WHERE host_id = ?").get(userId).n;
 
 // Win/loss record for a creator, plus their most recent result ('W' | 'L' | null)
 function recordFor(userId) {
@@ -108,7 +113,10 @@ function eventView(e) {
     .prepare("SELECT * FROM matchups WHERE event_id = ? ORDER BY position ASC, id ASC")
     .all(e.id)
     .map(matchupView);
-  return { ...e, matchups };
+  const host = e.host_id
+    ? db.prepare("SELECT id, display_name, tiktok_handle, photo FROM users WHERE id = ?").get(e.host_id)
+    : null;
+  return { ...e, matchups, host };
 }
 
 // ================= AUTH =================
@@ -117,18 +125,23 @@ app.post("/api/auth/signup", upload.single("photo"), (req, res) => {
   if (!email || !password || !display_name || !tiktok_handle)
     return res.status(400).json({ error: "Missing required fields" });
 
+  // join_as: 'debater' | 'hoster' | 'both'  (default debater)
+  const joinAs = ["debater", "hoster", "both"].includes(req.body.join_as) ? req.body.join_as : "debater";
+  const isDebater = joinAs === "debater" || joinAs === "both" ? 1 : 0;
+  const isHoster = joinAs === "hoster" || joinAs === "both" ? 1 : 0;
+
   const handle = tiktok_handle.startsWith("@") ? tiktok_handle : "@" + tiktok_handle;
   const photo = req.file ? `/uploads/${req.file.filename}` : null;
   try {
     const hash = bcrypt.hashSync(password, 10);
     const info = db
       .prepare(
-        "INSERT INTO users (email, password, display_name, tiktok_handle, photo, category_id) VALUES (?,?,?,?,?,?)"
+        "INSERT INTO users (email, password, display_name, tiktok_handle, photo, category_id, is_debater, is_hoster) VALUES (?,?,?,?,?,?,?,?)"
       )
-      .run(email.toLowerCase(), hash, display_name, handle, photo, category_id || null);
+      .run(email.toLowerCase(), hash, display_name, handle, photo, category_id || null, isDebater, isHoster);
 
-    // append to that category's ranking board (bottom)
-    if (category_id) {
+    // debaters: append to their chosen category board
+    if (isDebater && category_id) {
       const max = db
         .prepare("SELECT COALESCE(MAX(position), -1) m FROM rankings WHERE category_id = ?")
         .get(category_id).m;
@@ -137,6 +150,11 @@ app.post("/api/auth/signup", upload.single("photo"), (req, res) => {
         info.lastInsertRowid,
         max + 1
       );
+    }
+    // hosters: append to the Top Hosters board
+    if (isHoster) {
+      const hmax = db.prepare("SELECT COALESCE(MAX(hoster_position), -1) m FROM users WHERE is_hoster = 1").get().m;
+      db.prepare("UPDATE users SET hoster_position = ? WHERE id = ?").run(hmax + 1, info.lastInsertRowid);
     }
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
     res.json({ token: sign(user), user: publicUser(user) });
@@ -209,7 +227,7 @@ app.get("/api/users/:id", (req, res) => {
         result: m.winner_id ? (m.winner_id === u.id ? "W" : "L") : null,
       };
     });
-  res.json({ ...publicUser(u), categories: cats, record: recordFor(u.id), history });
+  res.json({ ...publicUser(u), categories: cats, record: recordFor(u.id), history, events_hosted: eventsHostedCount(u.id) });
 });
 
 // ================= ADMIN =================
@@ -258,7 +276,7 @@ app.delete("/api/admin/categories/:id", auth(), superOnly, (req, res) => {
 // ---- List every creator (admin) — for assigning into categories ----
 app.get("/api/admin/users", auth(), adminOnly, (_req, res) => {
   const users = db
-    .prepare("SELECT id, display_name, tiktok_handle, photo, graphic_bar FROM users WHERE is_admin = 0 ORDER BY display_name COLLATE NOCASE")
+    .prepare("SELECT id, display_name, tiktok_handle, photo, graphic_bar, is_debater, is_hoster FROM users WHERE is_admin = 0 ORDER BY display_name COLLATE NOCASE")
     .all();
   res.json(users);
 });
@@ -387,23 +405,24 @@ app.get("/api/events/:id", (req, res) => {
 
 // ================= EVENTS (admin) =================
 app.post("/api/admin/events", auth(), adminOnly, (req, res) => {
-  const { title, event_date } = req.body;
+  const { title, event_date, host_id } = req.body;
   if (!title) return res.status(400).json({ error: "title required" });
   const max = db.prepare("SELECT COALESCE(MAX(position), -1) m FROM events").get().m;
   const info = db
-    .prepare("INSERT INTO events (title, event_date, status, position) VALUES (?,?,'upcoming',?)")
-    .run(title, event_date || null, max + 1);
+    .prepare("INSERT INTO events (title, event_date, host_id, status, position) VALUES (?,?,?,'upcoming',?)")
+    .run(title, event_date || null, host_id || null, max + 1);
   res.json(eventView(db.prepare("SELECT * FROM events WHERE id = ?").get(info.lastInsertRowid)));
 });
 
 app.patch("/api/admin/events/:id", auth(), adminOnly, (req, res) => {
   const e = db.prepare("SELECT * FROM events WHERE id = ?").get(req.params.id);
   if (!e) return res.status(404).json({ error: "Event not found" });
-  const { title, event_date, status } = req.body;
+  const { title, event_date, status, host_id } = req.body;
   const fields = [], vals = [];
   if (title !== undefined) { fields.push("title = ?"); vals.push(title); }
   if (event_date !== undefined) { fields.push("event_date = ?"); vals.push(event_date); }
   if (status !== undefined && ["upcoming", "completed"].includes(status)) { fields.push("status = ?"); vals.push(status); }
+  if (host_id !== undefined) { fields.push("host_id = ?"); vals.push(host_id || null); }
   if (fields.length) db.prepare(`UPDATE events SET ${fields.join(", ")} WHERE id = ?`).run(...vals, req.params.id);
   res.json(eventView(db.prepare("SELECT * FROM events WHERE id = ?").get(req.params.id)));
 });
@@ -445,6 +464,44 @@ app.patch("/api/admin/matchups/:id", auth(), adminOnly, (req, res) => {
 
 app.delete("/api/admin/matchups/:id", auth(), superOnly, (req, res) => {
   db.prepare("DELETE FROM matchups WHERE id = ?").run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ================= HOSTERS =================
+// Public "Top Hosters" board
+app.get("/api/hosters", (_req, res) => {
+  const hosters = db
+    .prepare("SELECT id, display_name, tiktok_handle, photo, graphic_bar FROM users WHERE is_hoster = 1 ORDER BY hoster_position ASC, id ASC")
+    .all()
+    .map((u) => ({ ...u, events_hosted: eventsHostedCount(u.id) }));
+  res.json(hosters);
+});
+
+// Admin: reorder the hosters board
+app.put("/api/admin/hosters/order", auth(), adminOnly, (req, res) => {
+  const order = req.body.order;
+  if (!Array.isArray(order)) return res.status(400).json({ error: "order must be an array" });
+  const stmt = db.prepare("UPDATE users SET hoster_position = ? WHERE id = ? AND is_hoster = 1");
+  const tx = db.transaction((ids) => ids.forEach((uid, i) => stmt.run(i, uid)));
+  tx(order);
+  res.json({ ok: true });
+});
+
+// Admin: make an existing creator a hoster
+app.post("/api/admin/hosters", auth(), adminOnly, (req, res) => {
+  const userId = Number(req.body.user_id);
+  if (!userId) return res.status(400).json({ error: "user_id required" });
+  const u = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  if (!u) return res.status(404).json({ error: "User not found" });
+  if (u.is_hoster) return res.status(409).json({ error: "Already a hoster" });
+  const hmax = db.prepare("SELECT COALESCE(MAX(hoster_position), -1) m FROM users WHERE is_hoster = 1").get().m;
+  db.prepare("UPDATE users SET is_hoster = 1, hoster_position = ? WHERE id = ?").run(hmax + 1, userId);
+  res.json({ ok: true });
+});
+
+// Admin: remove hoster status
+app.delete("/api/admin/hosters/:id", auth(), adminOnly, (req, res) => {
+  db.prepare("UPDATE users SET is_hoster = 0 WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
 });
 

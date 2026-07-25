@@ -54,6 +54,7 @@ function EventCard({ ev, users, reload, canDelete }) {
         <div>
           <b>{ev.title}</b> <span className={`event-status ${ev.status}`}>{ev.status === "completed" ? "Past" : "Upcoming"}</span>
           {ev.event_date && <span className="event-date"> · {ev.event_date}</span>}
+          {ev.host && <span className="event-date"> · 🎙️ {ev.host.display_name}</span>}
         </div>
         <div className="admin-row-actions">
           <button className="mini-btn" onClick={toggleStatus}>{ev.status === "completed" ? "Mark upcoming" : "Mark past"}</button>
@@ -88,17 +89,23 @@ export default function EventsManager() {
   const canDelete = user?.role === "admin";
   const [data, setData] = useState({ upcoming: [], past: [] });
   const [users, setUsers] = useState([]);
+  const [hosters, setHosters] = useState([]);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
+  const [hostId, setHostId] = useState("");
 
   const reload = () => api.events().then(setData).catch(() => {});
-  useEffect(() => { reload(); api.allUsers().then(setUsers).catch(() => {}); }, []);
+  useEffect(() => {
+    reload();
+    api.allUsers().then(setUsers).catch(() => {});
+    api.hosters().then(setHosters).catch(() => {});
+  }, []);
 
   async function createEvent() {
     if (!title.trim()) return;
-    await api.addEvent({ title, event_date: date });
-    setTitle(""); setDate(""); setOpen(false); reload();
+    await api.addEvent({ title, event_date: date, host_id: hostId ? Number(hostId) : null });
+    setTitle(""); setDate(""); setHostId(""); setOpen(false); reload();
   }
 
   const all = [...data.upcoming, ...data.past];
@@ -116,6 +123,10 @@ export default function EventsManager() {
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
             <input placeholder="Event title (e.g. Friday Night Clash)" value={title} onChange={(e) => setTitle(e.target.value)} />
             <input placeholder="Date (e.g. Aug 2, 9:00 PM)" value={date} onChange={(e) => setDate(e.target.value)} />
+            <select value={hostId} onChange={(e) => setHostId(e.target.value)} className="role-select">
+              <option value="">Host (optional)…</option>
+              {hosters.map((h) => <option key={h.id} value={h.id}>🎙️ {h.display_name}</option>)}
+            </select>
             <button className="btn" onClick={createEvent}>Create event</button>
           </motion.div>
         )}
