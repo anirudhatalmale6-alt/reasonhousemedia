@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { Reorder, useDragControls, AnimatePresence, motion } from "framer-motion";
 import Nav from "../components/Nav";
 import TeamManager from "../components/TeamManager";
+import EventsManager from "../components/EventsManager";
 import { api, mediaUrl } from "../api";
 import { useAuth } from "../auth";
 
@@ -215,6 +216,9 @@ export default function Admin() {
             )}
           </div>
         )}
+
+        {/* Events management */}
+        <EventsManager />
 
         {/* Team management — super admins only */}
         {user?.role === "admin" && <TeamManager />}

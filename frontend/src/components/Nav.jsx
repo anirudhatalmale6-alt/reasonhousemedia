@@ -11,6 +11,7 @@ export default function Nav() {
       <Link to="/" className="brand"><img src="/logo.png" className="brand-logo" alt="" /> {BRAND.name}</Link>
       <div className="nav-links">
         <Link to="/c/comedy">Categories</Link>
+        <Link to="/events">Events</Link>
         <Link to="/#leaderboard">Leaderboard</Link>
         {user?.is_admin && <Link to="/admin">Admin</Link>}
       </div>

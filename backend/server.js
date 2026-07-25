@@ -75,6 +75,42 @@ const publicUser = (u) => ({
   category_id: u.category_id,
 });
 
+// Win/loss record for a creator, plus their most recent result ('W' | 'L' | null)
+function recordFor(userId) {
+  const wins = db.prepare("SELECT COUNT(*) n FROM matchups WHERE winner_id = ?").get(userId).n;
+  const losses = db
+    .prepare("SELECT COUNT(*) n FROM matchups WHERE winner_id IS NOT NULL AND winner_id != ? AND (a_user_id = ? OR b_user_id = ?)")
+    .get(userId, userId, userId).n;
+  const last = db
+    .prepare("SELECT winner_id FROM matchups WHERE winner_id IS NOT NULL AND (a_user_id = ? OR b_user_id = ?) ORDER BY id DESC LIMIT 1")
+    .get(userId, userId);
+  return { wins, losses, last: last ? (last.winner_id === userId ? "W" : "L") : null };
+}
+
+// Full matchup with both participants resolved — for event listings
+function matchupView(m) {
+  const p = (id) => {
+    const u = db.prepare("SELECT id, display_name, tiktok_handle, photo FROM users WHERE id = ?").get(id);
+    return u || null;
+  };
+  return {
+    id: m.id,
+    title: m.title,
+    method: m.method,
+    a: p(m.a_user_id),
+    b: p(m.b_user_id),
+    winner_id: m.winner_id,
+  };
+}
+
+function eventView(e) {
+  const matchups = db
+    .prepare("SELECT * FROM matchups WHERE event_id = ? ORDER BY position ASC, id ASC")
+    .all(e.id)
+    .map(matchupView);
+  return { ...e, matchups };
+}
+
 // ================= AUTH =================
 app.post("/api/auth/signup", upload.single("photo"), (req, res) => {
   const { email, password, display_name, tiktok_handle, category_id } = req.body;
@@ -138,7 +174,8 @@ app.get("/api/categories/:slug", (req, res) => {
        FROM rankings r JOIN users u ON u.id = r.user_id
        WHERE r.category_id = ? ORDER BY r.position ASC`
     )
-    .all(cat.id);
+    .all(cat.id)
+    .map((u) => ({ ...u, record: recordFor(u.id) }));
   res.json({ category: cat, ranking: users });
 });
 
@@ -153,7 +190,26 @@ app.get("/api/users/:id", (req, res) => {
        WHERE r.user_id = ? ORDER BY r.position ASC`
     )
     .all(u.id);
-  res.json({ ...publicUser(u), categories: cats });
+  // this creator's fight history (decided matchups they were in)
+  const history = db
+    .prepare(
+      `SELECT m.id, m.title, m.method, m.winner_id, e.title AS event_title, e.event_date, e.status,
+              m.a_user_id, m.b_user_id
+       FROM matchups m JOIN events e ON e.id = m.event_id
+       WHERE m.a_user_id = ? OR m.b_user_id = ?
+       ORDER BY m.id DESC`
+    )
+    .all(u.id, u.id)
+    .map((m) => {
+      const oppId = m.a_user_id === u.id ? m.b_user_id : m.a_user_id;
+      const opp = db.prepare("SELECT id, display_name, tiktok_handle FROM users WHERE id = ?").get(oppId);
+      return {
+        event_title: m.event_title, event_date: m.event_date, status: m.status,
+        method: m.method, opponent: opp,
+        result: m.winner_id ? (m.winner_id === u.id ? "W" : "L") : null,
+      };
+    });
+  res.json({ ...publicUser(u), categories: cats, record: recordFor(u.id), history });
 });
 
 // ================= ADMIN =================
@@ -307,6 +363,88 @@ app.delete("/api/admin/team/:id", auth(), superOnly, (req, res) => {
     if (supers <= 1) return res.status(400).json({ error: "Can't remove the last super admin" });
   }
   db.prepare("UPDATE users SET role = 'user', is_admin = 0 WHERE id = ?").run(id);
+  res.json({ ok: true });
+});
+
+// ================= EVENTS (public) =================
+app.get("/api/events", (_req, res) => {
+  const events = db.prepare("SELECT * FROM events ORDER BY position ASC, id DESC").all().map(eventView);
+  const upcoming = events.filter((e) => e.status !== "completed");
+  const past = events.filter((e) => e.status === "completed");
+  // headline winners from the most recent completed event
+  const lastEvent = past[0] || null;
+  const lastWinners = lastEvent
+    ? lastEvent.matchups.filter((m) => m.winner_id).map((m) => (m.winner_id === m.a?.id ? m.a : m.b))
+    : [];
+  res.json({ upcoming, past, lastEvent, lastWinners });
+});
+
+app.get("/api/events/:id", (req, res) => {
+  const e = db.prepare("SELECT * FROM events WHERE id = ?").get(req.params.id);
+  if (!e) return res.status(404).json({ error: "Event not found" });
+  res.json(eventView(e));
+});
+
+// ================= EVENTS (admin) =================
+app.post("/api/admin/events", auth(), adminOnly, (req, res) => {
+  const { title, event_date } = req.body;
+  if (!title) return res.status(400).json({ error: "title required" });
+  const max = db.prepare("SELECT COALESCE(MAX(position), -1) m FROM events").get().m;
+  const info = db
+    .prepare("INSERT INTO events (title, event_date, status, position) VALUES (?,?,'upcoming',?)")
+    .run(title, event_date || null, max + 1);
+  res.json(eventView(db.prepare("SELECT * FROM events WHERE id = ?").get(info.lastInsertRowid)));
+});
+
+app.patch("/api/admin/events/:id", auth(), adminOnly, (req, res) => {
+  const e = db.prepare("SELECT * FROM events WHERE id = ?").get(req.params.id);
+  if (!e) return res.status(404).json({ error: "Event not found" });
+  const { title, event_date, status } = req.body;
+  const fields = [], vals = [];
+  if (title !== undefined) { fields.push("title = ?"); vals.push(title); }
+  if (event_date !== undefined) { fields.push("event_date = ?"); vals.push(event_date); }
+  if (status !== undefined && ["upcoming", "completed"].includes(status)) { fields.push("status = ?"); vals.push(status); }
+  if (fields.length) db.prepare(`UPDATE events SET ${fields.join(", ")} WHERE id = ?`).run(...vals, req.params.id);
+  res.json(eventView(db.prepare("SELECT * FROM events WHERE id = ?").get(req.params.id)));
+});
+
+app.delete("/api/admin/events/:id", auth(), superOnly, (req, res) => {
+  db.prepare("DELETE FROM events WHERE id = ?").run(req.params.id);
+  res.json({ ok: true });
+});
+
+// Add a matchup (two creators) to an event
+app.post("/api/admin/events/:id/matchups", auth(), adminOnly, (req, res) => {
+  const eventId = Number(req.params.id);
+  const { a_user_id, b_user_id, title, method } = req.body;
+  if (!a_user_id || !b_user_id) return res.status(400).json({ error: "Both creators are required" });
+  if (Number(a_user_id) === Number(b_user_id)) return res.status(400).json({ error: "Pick two different creators" });
+  const max = db.prepare("SELECT COALESCE(MAX(position), -1) m FROM matchups WHERE event_id = ?").get(eventId).m;
+  const info = db
+    .prepare("INSERT INTO matchups (event_id, a_user_id, b_user_id, title, method, position) VALUES (?,?,?,?,?,?)")
+    .run(eventId, a_user_id, b_user_id, title || null, method || null, max + 1);
+  res.json(matchupView(db.prepare("SELECT * FROM matchups WHERE id = ?").get(info.lastInsertRowid)));
+});
+
+// Set the winner (or clear it) / update method of a matchup
+app.patch("/api/admin/matchups/:id", auth(), adminOnly, (req, res) => {
+  const m = db.prepare("SELECT * FROM matchups WHERE id = ?").get(req.params.id);
+  if (!m) return res.status(404).json({ error: "Matchup not found" });
+  const { winner_id, method, title } = req.body;
+  const fields = [], vals = [];
+  if (winner_id !== undefined) {
+    if (winner_id !== null && ![m.a_user_id, m.b_user_id].includes(Number(winner_id)))
+      return res.status(400).json({ error: "Winner must be one of the two creators" });
+    fields.push("winner_id = ?"); vals.push(winner_id === null ? null : Number(winner_id));
+  }
+  if (method !== undefined) { fields.push("method = ?"); vals.push(method); }
+  if (title !== undefined) { fields.push("title = ?"); vals.push(title); }
+  if (fields.length) db.prepare(`UPDATE matchups SET ${fields.join(", ")} WHERE id = ?`).run(...vals, req.params.id);
+  res.json(matchupView(db.prepare("SELECT * FROM matchups WHERE id = ?").get(req.params.id)));
+});
+
+app.delete("/api/admin/matchups/:id", auth(), superOnly, (req, res) => {
+  db.prepare("DELETE FROM matchups WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
 });
 

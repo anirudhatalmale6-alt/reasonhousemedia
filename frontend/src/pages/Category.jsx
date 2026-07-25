@@ -51,7 +51,13 @@ export default function Category() {
                     style={{ backgroundImage: `url(${mediaUrl(u.photo) || `https://i.pravatar.cc/120?u=${u.id}`})` }} />
                   <div className="name-wrap">
                     {u.graphic_bar && <div className="graphic-bar" style={{ backgroundImage: `url(${mediaUrl(u.graphic_bar)})` }} />}
-                    <Link to={`/u/${u.id}`} className="name" style={{ display: "block" }}>{u.display_name}</Link>
+                    <span className="name-line">
+                      <Link to={`/u/${u.id}`} className="name">{u.display_name}</Link>
+                      {u.record?.last && <span className={`wl-badge solid-${u.record.last.toLowerCase()}`}>{u.record.last}</span>}
+                      {u.record && (u.record.wins > 0 || u.record.losses > 0) && (
+                        <span className="record-pill"><b className="w">{u.record.wins}W</b> · <b className="l">{u.record.losses}L</b></span>
+                      )}
+                    </span>
                     <a className="handle" href={`https://www.tiktok.com/${u.tiktok_handle}`} target="_blank" rel="noreferrer">
                       {u.tiktok_handle} ↗
                     </a>

@@ -44,6 +44,29 @@ CREATE TABLE IF NOT EXISTS rankings (
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  event_date TEXT,
+  status TEXT DEFAULT 'upcoming',   -- 'upcoming' | 'completed'
+  position INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS matchups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL,
+  a_user_id INTEGER NOT NULL,
+  b_user_id INTEGER NOT NULL,
+  winner_id INTEGER,                -- NULL until decided
+  method TEXT,                      -- e.g. 'Decision', 'KO', 'Community vote'
+  title TEXT,                       -- e.g. 'Main event', 'Co-main'
+  position INTEGER DEFAULT 0,
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  FOREIGN KEY (a_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (b_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 `);
 
 // ---- Lightweight migrations (for DBs created before a column existed) ----

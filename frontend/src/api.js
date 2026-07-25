@@ -52,4 +52,13 @@ export const api = {
   addTeam: (payload) => request("/api/admin/team", { method: "POST", body: payload, auth: true }),
   setTeamRole: (id, role) => request(`/api/admin/team/${id}/role`, { method: "PATCH", body: { role }, auth: true }),
   removeTeam: (id) => request(`/api/admin/team/${id}`, { method: "DELETE", auth: true }),
+  // --- events ---
+  events: () => request("/api/events"),
+  event: (id) => request(`/api/events/${id}`),
+  addEvent: (payload) => request("/api/admin/events", { method: "POST", body: payload, auth: true }),
+  updateEvent: (id, payload) => request(`/api/admin/events/${id}`, { method: "PATCH", body: payload, auth: true }),
+  deleteEvent: (id) => request(`/api/admin/events/${id}`, { method: "DELETE", auth: true }),
+  addMatchup: (eventId, payload) => request(`/api/admin/events/${eventId}/matchups`, { method: "POST", body: payload, auth: true }),
+  updateMatchup: (id, payload) => request(`/api/admin/matchups/${id}`, { method: "PATCH", body: payload, auth: true }),
+  deleteMatchup: (id) => request(`/api/admin/matchups/${id}`, { method: "DELETE", auth: true }),
 };

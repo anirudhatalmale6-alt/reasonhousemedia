@@ -32,6 +32,14 @@ export default function Profile() {
             </a>
             <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 6 }}>Tap the handle to open their TikTok in a new tab</p>
 
+            {u.record && (u.record.wins > 0 || u.record.losses > 0) && (
+              <div className="profile-record">
+                <div className="rec-box"><b className="gold-text" style={{ WebkitTextFillColor: "var(--win)" }}>{u.record.wins}</b><span>Wins</span></div>
+                <div className="rec-box"><b style={{ color: "var(--loss)" }}>{u.record.losses}</b><span>Losses</span></div>
+                {u.record.last && <div className={`rec-last ${u.record.last.toLowerCase()}`}>Last: {u.record.last}</div>}
+              </div>
+            )}
+
             {u.categories?.length > 0 && (
               <div className="profile-ranks">
                 <h3 style={{ fontSize: 15, color: "var(--muted)", marginBottom: 14 }}>Ranked in</h3>
@@ -40,6 +48,22 @@ export default function Profile() {
                     <span>{c.emoji} {c.name}</span>
                     <b className="neon-text">#{c.rank}</b>
                   </Link>
+                ))}
+              </div>
+            )}
+
+            {u.history?.length > 0 && (
+              <div className="profile-ranks">
+                <h3 style={{ fontSize: 15, color: "var(--muted)", marginBottom: 14 }}>Event history</h3>
+                {u.history.map((h, i) => (
+                  <div className="rank-chip" key={i}>
+                    <span style={{ minWidth: 0 }}>
+                      {h.result && <span className={`wl-badge solid-${h.result.toLowerCase()}`} style={{ marginRight: 8 }}>{h.result}</span>}
+                      vs {h.opponent?.display_name || "TBA"}
+                      <span style={{ color: "var(--muted)", fontSize: 12, display: "block" }}>{h.event_title}{h.method ? ` · ${h.method}` : ""}</span>
+                    </span>
+                    <span style={{ color: "var(--muted)", fontSize: 12 }}>{h.status === "completed" ? "Final" : "Upcoming"}</span>
+                  </div>
                 ))}
               </div>
             )}

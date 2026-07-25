@@ -31,11 +31,13 @@
   animation: pulse 2.4s ease-in-out infinite;
 }
 .brand-logo {
-  width: 38px; height: 38px; border-radius: 50%;
+  width: 54px; height: 54px; border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 0 16px rgba(255, 195, 60, 0.35);
+  box-shadow: 0 0 20px rgba(245, 197, 66, 0.5);
+  border: 1px solid rgba(245, 197, 66, 0.4);
 }
-.footer .brand-logo { width: 46px; height: 46px; }
+.brand { font-size: 22px; }
+.footer .brand-logo { width: 72px; height: 72px; }
 @keyframes pulse { 0%,100%{ transform: scale(1); opacity:1;} 50%{ transform: scale(1.35); opacity:.75;} }
 .nav-links { display: flex; gap: 26px; align-items: center; }
 .nav-links a { color: var(--muted); font-size: 15px; font-weight: 500; transition: color .2s; }
@@ -431,3 +433,111 @@
   .team-row { grid-template-columns: 1fr auto; }
   .team-row .role-badge { grid-column: 1 / -1; justify-self: start; }
 }
+
+/* ---------- W/L record badges ---------- */
+.wl-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 800; letter-spacing: .02em;
+  padding: 3px 8px; border-radius: 999px; vertical-align: middle;
+}
+.wl-badge .w { color: var(--win); }
+.wl-badge .l { color: var(--loss); }
+.wl-badge.solid-w { background: var(--win); color: #04140a; padding: 4px 10px; }
+.wl-badge.solid-l { background: var(--loss); color: #1a0209; padding: 4px 10px; }
+.name-line { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.record-pill {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  background: rgba(255,255,255,.05); border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 999px;
+}
+.record-pill b.w { color: var(--win); }
+.record-pill b.l { color: var(--loss); }
+
+/* ---------- Events page ---------- */
+.events-head { display: flex; align-items: center; gap: 16px; margin: 18px 0 8px; }
+.events-head .brand-logo { width: 60px; height: 60px; }
+.last-winner {
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(245,197,66,.4); border-radius: 22px; padding: 24px;
+  background: linear-gradient(120% 120% at 0% 0%, rgba(245,197,66,.16), rgba(20,16,38,.6));
+  margin: 18px 0 34px;
+}
+.last-winner h3 { font-size: 14px; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 14px; }
+.winner-chips { display: flex; flex-wrap: wrap; gap: 12px; }
+.winner-chip {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 10px;
+  border-radius: 16px; background: rgba(0,0,0,.35); border: 1px solid rgba(245,197,66,.3);
+}
+.winner-chip .avatar { width: 44px; height: 44px; }
+.winner-chip .crown { font-size: 20px; }
+
+.event-block { margin-bottom: 30px; }
+.event-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.event-title-row h2 { font-size: 24px; }
+.event-date { color: var(--muted); font-size: 14px; }
+.event-status {
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  padding: 4px 10px; border-radius: 999px;
+}
+.event-status.upcoming { background: rgba(34,224,255,.14); color: var(--neon-cyan); }
+.event-status.completed { background: rgba(245,197,66,.16); color: var(--gold); }
+
+.matchup {
+  display: grid; grid-template-columns: 1fr 60px 1fr; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+  padding: 16px; margin-bottom: 12px;
+}
+.matchup .side { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.matchup .side.right { flex-direction: row-reverse; text-align: right; }
+.matchup .side .avatar { width: 52px; height: 52px; }
+.matchup .side.winner .m-name { color: var(--win); }
+.matchup .m-name { font-weight: 700; font-size: 16px; }
+.matchup .m-handle { color: var(--muted); font-size: 13px; }
+.matchup .vs { text-align: center; font-weight: 800; color: var(--muted); font-size: 13px; }
+.matchup .vs .method { display: block; font-size: 11px; color: var(--gold); margin-top: 4px; font-weight: 600; }
+.matchup .m-title { display:block; font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing:.05em; margin-bottom: 2px; }
+.result-tag {
+  display:inline-block; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 6px; margin-top: 4px;
+}
+.result-tag.w { background: var(--win); color: #04140a; }
+.result-tag.l { background: rgba(255,59,107,.15); color: var(--loss); border:1px solid rgba(255,59,107,.4); }
+
+@media (max-width: 600px) {
+  .matchup { grid-template-columns: 1fr 44px 1fr; padding: 12px; gap: 6px; }
+  .matchup .side .avatar { width: 40px; height: 40px; }
+  .matchup .m-name { font-size: 14px; }
+}
+
+/* profile record */
+.profile-record { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 20px; }
+.rec-box { display: flex; flex-direction: column; align-items: center; padding: 10px 20px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--border); }
+.rec-box b { font-size: 26px; font-weight: 800; }
+.rec-box span { font-size: 12px; color: var(--muted); }
+.rec-last { padding: 8px 14px; border-radius: 12px; font-weight: 800; font-size: 14px; }
+.rec-last.w { background: var(--win); color: #04140a; }
+.rec-last.l { background: rgba(255,59,107,.15); color: var(--loss); border: 1px solid rgba(255,59,107,.4); }
+
+/* ---------- Admin events ---------- */
+.am-event { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+.am-event-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.am-matchup { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; background: rgba(0,0,0,.25); margin-bottom: 8px; flex-wrap: wrap; }
+.am-fighters { display: flex; align-items: center; gap: 12px; }
+.am-fighter {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 14px;
+  cursor: pointer; transition: all .15s;
+}
+.am-fighter .avatar { width: 32px; height: 32px; border-radius: 8px; }
+.am-fighter:hover { border-color: var(--gold); }
+.am-fighter.win { border-color: var(--win); background: rgba(34,197,94,.12); }
+.am-fighter b.w { color: var(--win); font-size: 13px; }
+.am-vs { color: var(--muted); font-weight: 800; font-size: 12px; }
+.am-actions { display: flex; align-items: center; gap: 8px; }
+.am-tag { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: .04em; }
+.am-add-matchup { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.am-add-matchup select, .am-add-matchup input {
+  padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,.04);
+  border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 14px;
+}
+.am-add-matchup select option { background: var(--panel-solid); }
+.am-add-matchup input { min-width: 130px; }
