@@ -1,10 +1,14 @@
 import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database(path.join(__dirname, "data.db"));
+// DB lives in ./data (override with DB_PATH) so a deploy can persist just that folder
+const dbPath = process.env.DB_PATH || path.join(__dirname, "data", "data.db");
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 
 db.exec(`

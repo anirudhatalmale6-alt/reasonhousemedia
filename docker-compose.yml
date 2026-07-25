@@ -1,0 +1,17 @@
+services:
+  clashtok:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "80:4137"          # serve on port 80; put a reverse proxy in front for HTTPS
+    environment:
+      - PORT=4137
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-change-me-please}   # override in a .env file
+    volumes:
+      - clashtok_uploads:/app/backend/uploads
+      - clashtok_data:/app/backend/data       # keeps data.db across restarts
+
+volumes:
+  clashtok_uploads:
+  clashtok_data:

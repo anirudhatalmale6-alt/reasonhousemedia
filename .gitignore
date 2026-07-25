@@ -5,6 +5,7 @@ dist/
 # backend runtime
 backend/data.db
 backend/data.db-*
+backend/data/
 backend/uploads/*
 !backend/uploads/.gitkeep
 

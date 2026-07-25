@@ -78,6 +78,32 @@ frontend/
 | POST   | `/api/admin/categories`               | add category (admin)     |
 | DELETE | `/api/admin/categories/:id`           | remove category (admin)  |
 
+## 🚢 Deploying (one process serves everything)
+
+In production the backend also serves the built frontend, so it's a single process
+on a single port — easy to host anywhere.
+
+### Option A — Docker (recommended)
+```bash
+JWT_SECRET=your-long-random-secret docker compose up -d --build
+```
+Serves on port 80. Data (SQLite) and uploaded images persist in named volumes.
+Put a reverse proxy (Caddy/Nginx) in front for HTTPS + your domain.
+
+### Option B — Plain VPS (no Docker)
+```bash
+cd frontend && npm ci && VITE_API_URL="" npm run build
+cd ../backend && npm ci --omit=dev
+NODE_ENV=production PORT=4137 JWT_SECRET=your-secret node server.js
+# keep it alive with pm2:  pm2 start server.js --name clashtok
+```
+Then point Nginx/Caddy at `localhost:4137` for HTTPS.
+
 ## 🔒 Before production
-- Change the admin password and set a strong `JWT_SECRET` env var.
-- Serve behind HTTPS.
+- Change the admin password (`admin@clashtok.app` / `admin123`) and set a strong `JWT_SECRET`.
+- Serve behind HTTPS (reverse proxy).
+
+## 👥 Roles
+- **Super admin** — full control, including managing the admin team.
+- **Sub-admin** — manages categories, creators & rankings, but cannot delete
+  categories or manage the admin team.

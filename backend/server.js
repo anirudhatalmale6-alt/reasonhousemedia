@@ -193,7 +193,8 @@ app.post("/api/admin/categories", auth(), adminOnly, (req, res) => {
   }
 });
 
-app.delete("/api/admin/categories/:id", auth(), adminOnly, (req, res) => {
+// Deleting a category is destructive — super admins only
+app.delete("/api/admin/categories/:id", auth(), superOnly, (req, res) => {
   db.prepare("DELETE FROM categories WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
 });
@@ -311,4 +312,16 @@ app.delete("/api/admin/team/:id", auth(), superOnly, (req, res) => {
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-app.listen(PORT, () => console.log(`ClashTok API on :${PORT}`));
+// ---- Serve the built frontend in production (single deployable process) ----
+const distDir = path.join(__dirname, "../frontend/dist");
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir));
+  // SPA fallback — let API & uploads pass through, everything else gets index.html
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api") || req.path.startsWith("/uploads")) return next();
+    res.sendFile(path.join(distDir, "index.html"));
+  });
+  console.log("Serving frontend from", distDir);
+}
+
+app.listen(PORT, () => console.log(`ClashTok running on :${PORT}`));

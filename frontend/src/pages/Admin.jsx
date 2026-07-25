@@ -164,7 +164,9 @@ export default function Admin() {
           {cats.map((c) => (
             <div key={c.id} className={`admin-tab-wrap ${active?.id === c.id ? "on" : ""}`}>
               <button className="admin-tab-btn" onClick={() => setActive(c)}>{c.emoji} {c.name}</button>
-              <button className="admin-tab-x" title="Delete category" onClick={() => deleteCategory(c)}>×</button>
+              {user?.role === "admin" && (
+                <button className="admin-tab-x" title="Delete category (super admin only)" onClick={() => deleteCategory(c)}>×</button>
+              )}
             </div>
           ))}
           <button className="admin-tab-add" onClick={() => setShowAddCat((v) => !v)}>＋ Add category</button>

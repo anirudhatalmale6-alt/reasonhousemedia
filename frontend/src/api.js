@@ -1,4 +1,6 @@
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:4137";
+// Dev: talk to the standalone API. Prod: served same-origin, so use relative paths.
+// Set VITE_API_URL explicitly (even to "") to override.
+const BASE = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "http://localhost:4137" : "");
 
 export const mediaUrl = (p) => (p ? (p.startsWith("http") ? p : BASE + p) : null);
 
