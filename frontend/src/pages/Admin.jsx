@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Reorder, useDragControls, AnimatePresence, motion } from "framer-motion";
 import Nav from "../components/Nav";
+import TeamManager from "../components/TeamManager";
 import { api, mediaUrl } from "../api";
 import { useAuth } from "../auth";
 
@@ -212,6 +213,9 @@ export default function Admin() {
             )}
           </div>
         )}
+
+        {/* Team management — super admins only */}
+        {user?.role === "admin" && <TeamManager />}
       </div>
 
       <AnimatePresence>

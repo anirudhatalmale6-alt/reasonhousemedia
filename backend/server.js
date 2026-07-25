@@ -38,7 +38,7 @@ const upload = multer({
 // ---- Auth helpers ----
 function sign(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, is_admin: !!user.is_admin },
+    { id: user.id, email: user.email, is_admin: !!user.is_admin, role: user.role || "user" },
     JWT_SECRET,
     { expiresIn: "7d" }
   );
@@ -58,6 +58,11 @@ function auth(required = true) {
 }
 function adminOnly(req, res, next) {
   if (!req.user?.is_admin) return res.status(403).json({ error: "Admin only" });
+  next();
+}
+// Only the super admin (role 'admin') can manage the admin team
+function superOnly(req, res, next) {
+  if (req.user?.role !== "admin") return res.status(403).json({ error: "Super admin only" });
   next();
 }
 
@@ -110,13 +115,13 @@ app.post("/api/auth/login", (req, res) => {
   const user = db.prepare("SELECT * FROM users WHERE email = ?").get((email || "").toLowerCase());
   if (!user || !bcrypt.compareSync(password || "", user.password))
     return res.status(401).json({ error: "Invalid email or password" });
-  res.json({ token: sign(user), user: { ...publicUser(user), is_admin: !!user.is_admin } });
+  res.json({ token: sign(user), user: { ...publicUser(user), is_admin: !!user.is_admin, role: user.role } });
 });
 
 app.get("/api/me", auth(), (req, res) => {
   const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id);
   if (!user) return res.status(404).json({ error: "Not found" });
-  res.json({ ...publicUser(user), is_admin: !!user.is_admin });
+  res.json({ ...publicUser(user), is_admin: !!user.is_admin, role: user.role });
 });
 
 // ================= CATEGORIES =================
@@ -245,6 +250,64 @@ app.patch(
     res.json(publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id)));
   }
 );
+
+// ================= ADMIN TEAM (super admin only) =================
+const teamUser = (u) => ({
+  id: u.id, email: u.email, display_name: u.display_name, role: u.role, created_at: u.created_at,
+});
+
+// List all admins + sub-admins
+app.get("/api/admin/team", auth(), superOnly, (_req, res) => {
+  const team = db
+    .prepare("SELECT id, email, display_name, role, created_at FROM users WHERE role IN ('admin','subadmin') ORDER BY role DESC, id ASC")
+    .all();
+  res.json(team);
+});
+
+// Create a new admin or sub-admin
+app.post("/api/admin/team", auth(), superOnly, (req, res) => {
+  const { email, password, display_name, role } = req.body;
+  if (!email || !password || !display_name) return res.status(400).json({ error: "Missing required fields" });
+  if (!["admin", "subadmin"].includes(role)) return res.status(400).json({ error: "role must be admin or subadmin" });
+  if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+  try {
+    const hash = bcrypt.hashSync(password, 10);
+    const info = db
+      .prepare("INSERT INTO users (email, password, display_name, tiktok_handle, is_admin, role) VALUES (?,?,?,?,1,?)")
+      .run(email.toLowerCase(), hash, display_name, "@" + email.split("@")[0], role);
+    res.json(teamUser(db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid)));
+  } catch (e) {
+    if (String(e).includes("UNIQUE")) return res.status(409).json({ error: "Email already registered" });
+    res.status(500).json({ error: "Could not create admin" });
+  }
+});
+
+// Change a team member's role (promote/demote)
+app.patch("/api/admin/team/:id/role", auth(), superOnly, (req, res) => {
+  const id = Number(req.params.id);
+  const { role } = req.body;
+  if (!["admin", "subadmin"].includes(role)) return res.status(400).json({ error: "Invalid role" });
+  if (id === req.user.id) return res.status(400).json({ error: "You can't change your own role" });
+  const target = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+  if (!target || target.role === "user") return res.status(404).json({ error: "Team member not found" });
+  db.prepare("UPDATE users SET role = ?, is_admin = 1 WHERE id = ?").run(role, id);
+  res.json(teamUser(db.prepare("SELECT * FROM users WHERE id = ?").get(id)));
+});
+
+// Remove a team member's admin access (revoke back to normal user)
+app.delete("/api/admin/team/:id", auth(), superOnly, (req, res) => {
+  const id = Number(req.params.id);
+  if (id === req.user.id) return res.status(400).json({ error: "You can't remove yourself" });
+  const target = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+  if (!target || target.role === "user") return res.status(404).json({ error: "Team member not found" });
+  // never allow removing the last super admin
+  if (target.role === "admin") {
+    const supers = db.prepare("SELECT COUNT(*) n FROM users WHERE role = 'admin'").get().n;
+    if (supers <= 1) return res.status(400).json({ error: "Can't remove the last super admin" });
+  }
+  db.prepare("UPDATE users SET role = 'user', is_admin = 0 WHERE id = ?").run(id);
+  res.json({ ok: true });
+});
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 

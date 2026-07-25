@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   graphic_bar TEXT,
   category_id INTEGER,
   is_admin INTEGER DEFAULT 0,
+  role TEXT DEFAULT 'user',
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
@@ -44,6 +45,12 @@ CREATE TABLE IF NOT EXISTS rankings (
 // ---- Lightweight migrations (for DBs created before a column existed) ----
 const userCols = db.prepare("PRAGMA table_info(users)").all().map((c) => c.name);
 if (!userCols.includes("graphic_bar")) db.exec("ALTER TABLE users ADD COLUMN graphic_bar TEXT");
+// role: 'user' | 'subadmin' | 'admin' (admin = super admin / owner)
+if (!userCols.includes("role")) {
+  db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'");
+  db.exec("UPDATE users SET role = 'admin' WHERE is_admin = 1");
+  db.exec("UPDATE users SET role = 'user' WHERE role IS NULL");
+}
 
 // ---- Seed default categories + admin on first run ----
 const catCount = db.prepare("SELECT COUNT(*) n FROM categories").get().n;
@@ -65,7 +72,7 @@ const adminExists = db.prepare("SELECT id FROM users WHERE is_admin = 1").get();
 if (!adminExists) {
   const hash = bcrypt.hashSync("admin123", 10);
   db.prepare(
-    "INSERT INTO users (email, password, display_name, tiktok_handle, is_admin) VALUES (?,?,?,?,1)"
+    "INSERT INTO users (email, password, display_name, tiktok_handle, is_admin, role) VALUES (?,?,?,?,1,'admin')"
   ).run("admin@clashtok.app", hash, "Admin", "@clashtok");
 }
 

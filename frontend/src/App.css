@@ -399,3 +399,29 @@
   .admin-row-actions { grid-column: 3 / -1; justify-content: flex-start; margin-top: 4px; }
   .assign-row { flex-direction: column; }
 }
+
+/* ---------- Admin team ---------- */
+.role-select {
+  padding: 11px 14px; border-radius: 10px; background: rgba(255,255,255,.04);
+  border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 15px;
+}
+.role-select option { background: var(--panel-solid); }
+.team-list { display: flex; flex-direction: column; gap: 8px; }
+.team-row {
+  display: grid; grid-template-columns: 120px 1fr auto; align-items: center; gap: 14px;
+  padding: 12px 14px; border-radius: 14px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+}
+.role-badge {
+  font-size: 12px; font-weight: 700; text-align: center; padding: 6px 8px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.role-badge.admin { background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple)); color: #fff; }
+.role-badge.subadmin { background: rgba(34,224,255,.14); color: var(--neon-cyan); border: 1px solid rgba(34,224,255,.35); }
+.team-main .name { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.you-tag { font-size: 11px; font-weight: 700; color: var(--neon-lime); background: rgba(182,255,58,.12); padding: 2px 8px; border-radius: 999px; }
+
+@media (max-width: 600px) {
+  .team-row { grid-template-columns: 1fr auto; }
+  .team-row .role-badge { grid-column: 1 / -1; justify-self: start; }
+}

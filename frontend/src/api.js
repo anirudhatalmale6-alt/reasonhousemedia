@@ -45,4 +45,9 @@ export const api = {
     request(`/api/admin/categories/${catId}/members/${userId}`, { method: "DELETE", auth: true }),
   updateUser: (id, form) =>
     request(`/api/admin/users/${id}`, { method: "PATCH", form, auth: true }),
+  // --- admin team (super admin only) ---
+  team: () => request("/api/admin/team", { auth: true }),
+  addTeam: (payload) => request("/api/admin/team", { method: "POST", body: payload, auth: true }),
+  setTeamRole: (id, role) => request(`/api/admin/team/${id}/role`, { method: "PATCH", body: { role }, auth: true }),
+  removeTeam: (id) => request(`/api/admin/team/${id}`, { method: "DELETE", auth: true }),
 };
